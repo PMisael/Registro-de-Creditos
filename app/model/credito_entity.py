@@ -2,6 +2,7 @@ from app.extensions import db
 
 class Credito(db.Model):
     __tablename__='creditos'
+    __table_args__ = {"sqlite_autoincrement": True}
 
     id                 = db.Column(db.Integer, primary_key=True, autoincrement=True)
     cliente            = db.Column(db.String(120), nullable=False)
