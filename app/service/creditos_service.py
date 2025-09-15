@@ -10,7 +10,7 @@ class creditos_service():
         required = ["cliente", "monto", "tasa_intereses", "plazo", "fecha_otorgamiento"]
         errors = {}
 
-        # 1) Campos obligatorios
+        # Campos obligatorios
         if require_all:
             for f in required:
                 if f not in payload:
@@ -20,13 +20,13 @@ class creditos_service():
         def missing_or_empty(name):
             return (name not in payload) or (payload.get(name) is None) or (str(payload.get(name)).strip() == "")
 
-        # 2) cliente
+        # cliente
         if not missing_or_empty("cliente"):
             cliente = str(payload.get("cliente")).strip()
             if not cliente:
                 errors["cliente"] = "Requerido"
 
-        # 3) monto
+        # monto
         if not missing_or_empty("monto") and "monto" not in errors:
             try:
                 monto = float(payload.get("monto"))
@@ -35,7 +35,7 @@ class creditos_service():
             except Exception:
                 errors["monto"] = "Debe ser numérico"
 
-        # 4) tasa_intereses  (OJO: singular)
+        # tasa_intereses  (OJO: singular)
         if not missing_or_empty("tasa_intereses") and "tasa_intereses" not in errors:
             try:
                 tasa = float(payload.get("tasa_intereses"))
@@ -44,7 +44,7 @@ class creditos_service():
             except Exception:
                 errors["tasa_intereses"] = "Debe ser numérico"
 
-        # 5) plazo
+        # plazo
         if not missing_or_empty("plazo") and "plazo" not in errors:
             try:
                 plazo = int(payload.get("plazo"))
@@ -53,7 +53,7 @@ class creditos_service():
             except Exception:
                 errors["plazo"] = "Debe ser entero"
 
-        # 6) fecha_otorgamiento
+        # fecha_otorgamiento
         if not missing_or_empty("fecha_otorgamiento") and "fecha_otorgamiento" not in errors:
             try:
                 datetime.strptime(payload.get("fecha_otorgamiento"), "%Y-%m-%d")

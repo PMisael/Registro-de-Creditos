@@ -2,6 +2,7 @@ const API = "/api/creditos";
 
 let state = {
   total_pages:1,
+  total: 0,
   page: 1,
   page_size: 10,
   cliente: "",
@@ -14,7 +15,6 @@ const $$ = (sel, root=document) => [...root.querySelectorAll(sel)];
 
 function serializeForm(formEl) {
   const data = Object.fromEntries(new FormData(formEl).entries());
-  // normaliza números
   if (data.monto !== undefined) data.monto = data.monto === "" ? "" : Number(data.monto);
   if (data.tasa_intereses !== undefined) data.tasa_intereses = data.tasa_intereses === "" ? "" : Number(data.tasa_intereses);
   if (data.plazo !== undefined) data.plazo = data.plazo === "" ? "" : Number(data.plazo);
@@ -69,8 +69,8 @@ async function loadTable() {
     `;
     tbody.appendChild(tr);
   });
-  
-  state.total_pages=Math.max(1, Math.ceil(data.total / data.page_size ));
+  state.total       = data.total
+  state.total_pages = Math.max(1, Math.ceil(data.total / data.page_size ));
 
   $("#page-info").textContent = `Página ${data.page} / ${state.total_pages}`;
 }
@@ -83,13 +83,14 @@ async function onSubmitCreate(e) {
   const errBox = $("#form-errors");
   showErrors(errBox, null);
 
-  // Validación básica del navegador
+  // Validación básica
   if (!form.reportValidity()) return;
 
   try {
     await fetchJSON(API, { method: "POST", body: JSON.stringify(payload) });
     form.reset();
     await loadTable();
+    await loadChartsFromAllCredits();
   } catch (err) {
     showErrors(errBox, err.errors || { error: err.message || "Error" });
   }
@@ -115,7 +116,7 @@ async function onClickTable(e) {
   const delId = e.target.getAttribute("data-del");
 
   if (editId) {
-    // obtener detalle (o usar la fila actual si traes todo)
+    // obtener detalle
     const row = await fetchJSON(`${API}/${editId}`);
     openEditModal(row);
   }
@@ -165,13 +166,132 @@ function bindFilters() {
   });
 }
 
+/* ---------- Dashboard ---------- */
+async function fetchAllCreditos(filters = {}) {
+  const pageSize = state.total
+  let page = 1;
+  let all = [];
+
+  while (true) {
+    const params = new URLSearchParams({ page, page_size: pageSize });
+    if (filters.cliente) params.set("cliente", filters.cliente);
+    if (filters.desde) params.set("desde", filters.desde);
+    if (filters.hasta) params.set("hasta", filters.hasta);
+
+    const chunk = await fetchJSON(`/api/creditos?${params.toString()}`);
+
+    const items = Array.isArray(chunk) ? chunk : (chunk.items || []);
+    all = all.concat(items);
+
+    const total = Array.isArray(chunk) ? items.length : (chunk.total ?? items.length);
+    const pageSizeUsed = Array.isArray(chunk) ? items.length : (chunk.page_size ?? pageSize);
+    const currentPage = Array.isArray(chunk) ? page : (chunk.page ?? page);
+
+    const totalPages = Math.max(1, Math.ceil(total / pageSizeUsed));
+    if (currentPage >= totalPages || items.length === 0) break;
+
+    page += 1;
+  }
+  return all;
+}
+function groupByDateSumMonto(creditos) {
+  // suma por día YYYY-MM-DD
+  const map = new Map();
+  for (const c of creditos) {
+    const d = c.fecha_otorgamiento; // YYYY-MM-DD
+    const monto = Number(c.monto) || 0;
+    map.set(d, (map.get(d) || 0) + monto);
+  }
+  // orden cronológico
+  const dates = [...map.keys()].sort();
+  const daily = dates.map(d => ({ fecha: d, monto: map.get(d) }));
+
+  // acumulado
+  let acc = 0;
+  const acumulado = daily.map(x => { acc += x.monto; return { fecha: x.fecha, acumulado: acc }; });
+
+  return { daily, acumulado };
+}
+
+function distribucionPorCliente(creditos, top = 10) {
+  const map = new Map();
+  for (const c of creditos) {
+    const nombre = c.cliente || "N/D";
+    const monto = Number(c.monto) || 0;
+    map.set(nombre, (map.get(nombre) || 0) + monto);
+  }
+  const arr = [...map.entries()].map(([cliente, monto]) => ({ cliente, monto }));
+  arr.sort((a,b) => b.monto - a.monto);
+  return arr.slice(0, top);
+}
+
+function distribucionPorRangos(creditos, rangos = [[0,5000], [5000,10000], [10000,20000], [20000,50000], [50000,null]]) {
+  const buckets = rangos.map(([min,max]) => ({
+    etiqueta: max == null ? `${min}+` : `${min}–${max}`,
+    min, max, cantidad: 0
+  }));
+  for (const c of creditos) {
+    const m = Number(c.monto) || 0;
+    for (const b of buckets) {
+      const inBin = b.max == null ? (m >= b.min) : (m >= b.min && m < b.max);
+      if (inBin) { b.cantidad++; break; }
+    }
+  }
+  return buckets;
+}
+
+const charts = {};
+function renderOrUpdateChart(canvasId, config) {
+  const ctx = document.getElementById(canvasId).getContext("2d");
+  if (charts[canvasId]) { charts[canvasId].data = config.data; charts[canvasId].options = config.options || {}; charts[canvasId].update(); }
+  else { charts[canvasId] = new Chart(ctx, config); }
+}
+
+async function loadChartsFromAllCredits() {
+  const creditos = await fetchAllCreditos();
+
+  // Todos los créditos otorgados (línea acumulada por fecha)
+  const { acumulado } = groupByDateSumMonto(creditos);
+  renderOrUpdateChart("chartTodos", {
+    type: "line",
+    data: {
+      labels: acumulado.map(x => x.fecha),
+      datasets: [{ label: "Monto acumulado", data: acumulado.map(x => x.acumulado) }]
+    },
+    options: { responsive: true, scales: { x: { ticks: { autoSkip: true } } } }
+  });
+
+  // Distribución por cliente (solo primeros 10))
+  const topClientes = distribucionPorCliente(creditos, 10);
+  renderOrUpdateChart("chartClientes", {
+    type: "bar",
+    data: {
+      labels: topClientes.map(x => x.cliente),
+      datasets: [{ label: "Monto por cliente", data: topClientes.map(x => x.monto) }]
+    },
+    options: { indexAxis: "y", responsive: true }
+  });
+
+  // Distribución por rangos de montos
+  const buckets = distribucionPorRangos(creditos);
+  renderOrUpdateChart("chartRangos", {
+    type: "bar",
+    data: {
+      labels: buckets.map(b => b.etiqueta),
+      datasets: [{ label: "Cantidad de créditos", data: buckets.map(b => b.cantidad) }]
+    },
+    options: { responsive: true }
+  });
+}
+
+
 /* ---------- Init ---------- */
 function init() {
   $("#form-credito").addEventListener("submit", onSubmitCreate);
   $("#tabla-creditos").addEventListener("click", onClickTable);
   $("#form-editar").addEventListener("submit", onSubmitEdit);
   bindFilters();
-  loadTable().catch(err => console.error(err));
+  loadTable().then(loadChartsFromAllCredits).catch(console.error);
 }
 
 document.addEventListener("DOMContentLoaded", init);
