@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <title>Créditos • Demo</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link href="{{ url_for('static', filename='styles.css') }}" rel="stylesheet" />
+</head>
+<body>
+  <header>
+    <h1>Gestión de Créditos</h1>
+  </header>
+
+  <main>
+    <!-- Formulario -->
+    <section class="card">
+      <h2>Registrar crédito</h2>
+      <form id="form-credito" novalidate>
+        <div class="row">
+          <label>Cliente
+            <input type="text" name="cliente" required maxlength="120" />
+          </label>
+          <label>Monto
+            <input type="number" name="monto" step="0.01" min="0.01" required />
+          </label>
+          <label>Tasa interés anual (%)
+            <input type="number" name="tasa_intereses" step="0.01" min="0" max="100" required />
+          </label>
+        </div>
+        <div class="row">
+          <label>Plazo (meses)
+            <input type="number" name="plazo" min="1" required />
+          </label>
+          <label>Fecha otorgamiento
+            <input type="date" name="fecha_otorgamiento" required />
+          </label>
+        </div>
+        <div class="actions">
+          <button type="submit">Guardar</button>
+          <button type="reset" class="secondary">Limpiar</button>
+        </div>
+        <div id="form-errors" class="errors"></div>
+      </form>
+    </section>
+
+    <!-- Tabla -->
+    <section class="card">
+      <div class="table-header">
+        <h2>Créditos</h2>
+        <div class="filters">
+          <input type="text" id="f-cliente" placeholder="Buscar por cliente..." />
+          <input type="date" id="f-desde" />
+          <input type="date" id="f-hasta" />
+          <button id="btn-filtrar">Filtrar</button>
+        </div>
+      </div>
+      <table id="tabla-creditos">
+        <thead>
+          <tr>
+            <th>ID</th><th>Cliente</th><th>Monto</th><th>Tasa %</th><th>Plazo</th><th>Fecha</th><th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+      <div class="pager">
+        <button id="prev">&laquo; Prev</button>
+        <span id="page-info"></span>
+        <button id="next">Next &raquo;</button>
+      </div>
+    </section>
+  </main>
+
+  <!-- Modal edición simple -->
+  <dialog id="modal-editar">
+    <form method="dialog" id="form-editar">
+      <h3>Editar crédito <span id="edit-id"></span></h3>
+      <label>Cliente <input type="text" name="cliente" required maxlength="120" /></label>
+      <label>Monto <input type="number" name="monto" step="0.01" min="0.01" required /></label>
+      <label>Tasa interés anual (%) <input type="number" name="tasa_intereses" step="0.01" min="0" max="100" required /></label>
+      <label>Plazo (meses) <input type="number" name="plazo" min="1" required /></label>
+      <label>Fecha otorgamiento <input type="date" name="fecha_otorgamiento" required /></label>
+      <menu>
+        <button value="cancel" class="secondary">Cancelar</button>
+        <button value="confirm">Guardar</button>
+      </menu>
+      <div id="edit-errors" class="errors"></div>
+    </form>
+  </dialog>
+
+  <script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>
