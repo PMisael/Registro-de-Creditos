@@ -44,7 +44,7 @@ class Seeder:
         db.session.commit()
         print(f"✅ {n} créditos insertados con éxito.")
 
-    def run(self, n=25, reset=True):
+    def run(self, n=75, reset=True):
         """Ejecuta la siembra completa"""
         with self.app.app_context():
             if reset:
