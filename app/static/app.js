@@ -126,6 +126,7 @@ async function onClickTable(e) {
     try {
       await fetchJSON(`${API}/${delId}`, { method: "DELETE" });
       await loadTable();
+      await loadChartsFromAllCredits();
     } catch (err) {
       alert(err.message || "Error eliminando");
     }
@@ -144,6 +145,7 @@ async function onSubmitEdit(e) {
     await fetchJSON(`${API}/${id}`, { method: "PUT", body: JSON.stringify(payload) });
     dlg.close();
     await loadTable();
+    await loadChartsFromAllCredits();
   } catch (err) {
     showErrors($("#edit-errors"), err.errors || { error: err.message || "Error" });
   }
