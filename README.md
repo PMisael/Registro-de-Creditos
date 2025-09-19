@@ -92,20 +92,20 @@ El proyecto incluye diagramas UML para ilustrar la arquitectura y el flujo de la
 Los diagramas están disponibles en la carpeta [DiagramasUML](./DiagramasUML/) y sirven como apoyo para entender el diseño y la interacción entre capas.
 
 ### 📐 Diagrama de clases
-<img src="./DiagramasUML/DiagramaClases.jpg" width="500">
+<img src="./DiagramasUML/DiagramaClases.jpg" width="800">
 
 ### 📑 Diagrama de secuencia: Listar créditos
-<img src="./DiagramasUML/GET-api_creditos.jpg" width="500">
+<img src="./DiagramasUML/GET-api_creditos.jpg" width="800">
 
 ### 📑 Diagrama de secuencia: Crear crédito
-<img src="./DiagramasUML/POST-api_creditos.jpg" width="500">
+<img src="./DiagramasUML/POST-api_creditos.jpg" width="800">
 
 ### 📑 Diagrama de secuencia: Editar crédito
-<img src="./DiagramasUML/PUT-api_creditos_credito_id.jpg" width="500">
+<img src="./DiagramasUML/PUT-api_creditos_credito_id.jpg" width="800">
 
 ### 📑 Diagrama de secuencia: Borrar crédito
-<img src="./DiagramasUML/DELETE-api_creditos_credito_id.jpg" width="500">
+<img src="./DiagramasUML/DELETE-api_creditos_credito_id.jpg" width="800">
 
 ### 📑 Diagrama de secuencia: Detalle crédito
-<img src="./DiagramasUML/GET-api_creditos_credito_id.jpg" width="500">
+<img src="./DiagramasUML/GET-api_creditos_credito_id.jpg" width="800">
 
